@@ -96,14 +96,14 @@ $$
 **Lower bound.** Consider any valid schedule. Stage $j^\ast$ must process all $M$ micro-batches serially, consuming $M\tau_{\max}$ of processor time on $j^\ast$; these $M$ operations cannot overlap in time. Before the first micro-batch can be processed at $j^\ast$, it must traverse stages $0,\dots,j^\ast-1$, costing at least $\sum_{i\lt j^\ast}\tau_i$. After the last micro-batch is processed at $j^\ast$, it must traverse stages $j^\ast+1,\dots,S-1$, costing at least $\sum_{i\gt j^\ast}\tau_i$. These three time spans are pairwise disjoint on the timeline (a single micro-batch experiences them sequentially, and the bottleneck's $M$ operations bracket the traversal of all others). Hence
 
 $$
-T(M) \;\ge\; \sum_{i\lt j^*}\tau_i + M\tau_{\max} + \sum_{i\gt j^*}\tau_i
+T(M) \;\ge\; \sum_{i\lt j^\ast}\tau_i + M\tau_{\max} + \sum_{i\gt j^\ast}\tau_i
 \;=\; (M-1)\tau_{\max} + \sum_j\tau_j .
 $$
 
 **Upper bound (attainability).** We prove the upper bound by strong induction on the number of stages $S$. *Base case* ($S=1$): there is no communication and $T(M)=M\tau_0=(M-1)\tau_{\max}+\tau_0$. *Inductive step* ($S\ge2$). Let $j^\ast=\arg\max_j\tau_j$ and run the greedy ASAP schedule (every stage starts a micro-batch the moment it is idle and the micro-batch has completed the previous stage). If $j^\ast=0$, the source stage works continuously for $M\tau_{\max}$ and the last micro-batch drains in $\sum_{i\gt 0}\tau_i$, attaining the bound. If $j^\ast\ge1$, the upstream sub-line $0,\dots,j^\ast-1$ has $j^\ast\lt S$ stages, so by the induction hypothesis it delivers micro-batch $m$ to $j^\ast$ by time $\sum_{i\lt j^\ast}\tau_i+m\,\tau_{\uparrow}$ with $\tau_{\uparrow}:=\max_{i\lt j^\ast}\tau_i\le\tau_{\max}$; since $j^\ast$ spends exactly $\tau_{\max}$ per micro-batch, the arrival rate is never below its service rate, so $j^\ast$ never idles after the first micro-batch arrives. Symmetrically, the downstream sub-line $j^\ast+1,\dots,S-1$ (empty if $j^\ast=S-1$) drains the last micro-batch in $\sum_{i\gt j^\ast}\tau_i$. The schedule is feasible and achieves
 
 $$
-T(M) \;=\; \sum_{i\lt j^*}\tau_i + M\tau_{\max} + \sum_{i\gt j^*}\tau_i \;=\; (M-1)\tau_{\max} + \sum_j\tau_j .
+T(M) \;=\; \sum_{i\lt j^\ast}\tau_i + M\tau_{\max} + \sum_{i\gt j^\ast}\tau_i \;=\; (M-1)\tau_{\max} + \sum_j\tau_j .
 $$
 
 Lower and upper bounds coincide. ∎
@@ -143,14 +143,14 @@ $$
 **Lower bound.** Consider the critical path through the bottleneck stage $j^\ast$. Stage $j^\ast$ must process all $M$ micro-batches serially, consuming $M\tau_{\max}$. The first micro-batch traverses stages $0,\dots,j^\ast-1$ before reaching $j^\ast$, paying $\sum_{i\lt j^\ast}\tau_i+\sum_{i\lt j^\ast}d_i$: on the first micro-batch's path, its own computation and its transfers are serialized (a transfer of micro-batch $0$ from stage $i$ to $i+1$ cannot begin until stage $i$ has computed it, and stage $i+1$ cannot compute it until the transfer ends). After the last micro-batch leaves $j^\ast$, it traverses stages $j^\ast+1,\dots,S-1$, paying $\sum_{i\gt j^\ast}\tau_i+\sum_{i=j^\ast}^{S-2}d_i$. These three phases are pairwise disjoint on the timeline, and every valid schedule must contain them on some critical path; hence
 
 $$
-T(M) \;\ge\; \sum_{i\lt j^*}\tau_i+\sum_{i\lt j^*}d_i + M\tau_{\max} + \sum_{i\gt j^*}\tau_i+\sum_{i=j^*}^{S-2}d_i
+T(M) \;\ge\; \sum_{i\lt j^\ast}\tau_i+\sum_{i\lt j^\ast}d_i + M\tau_{\max} + \sum_{i\gt j^\ast}\tau_i+\sum_{i=j^\ast}^{S-2}d_i
 \;=\; \sum_j\tau_j + \sum_{j=0}^{S-2}d_j + (M-1)\tau_{\max}.
 $$
 
 **Upper bound (attainability).** We prove the upper bound by strong induction on the number of stages $S$. *Base case* ($S=1$): there is no communication and $T(M)=M\tau_0=(M-1)\tau_{\max}+\tau_0$. *Inductive step* ($S\ge2$). Let $j^\ast=\arg\max_j\tau_j$ and run the fill–drain schedule (micro-batches released in order $0,1,\dots,M-1$, every stage ASAP). If $j^\ast=0$, the source stage works continuously for $M\tau_{\max}$ and the last micro-batch drains through stages $1,\dots,S-1$ in $\sum_{i\gt 0}\tau_i+\sum_{i=0}^{S-2}d_i$, attaining the bound. If $j^\ast\ge1$, the upstream sub-line $0,\dots,j^\ast-1$ has $j^\ast\lt S$ stages, so by the induction hypothesis (Theorem 2 for $j^\ast$ stages) it delivers micro-batch $m$ to $j^\ast$ — that is, completes stage $j^\ast-1$ and its send — by time $\sum_{i\lt j^\ast}(\tau_i+d_i)+m\,\tau_{\uparrow}$ with $\tau_{\uparrow}:=\max_{i\lt j^\ast}\tau_i\le\tau_{\max}$. Because sends are asynchronous, an upstream stage's *service* period is exactly $\tau_i$ (transfers run in the background on a separate stream, consuming memory bandwidth but not SM compute), so this arrival bound carries no slowdown from the sub-line's own transfers beyond the additive $\sum_{i\lt j^\ast}d_i$ already accounted for. We then prove by induction on $m$ that $T[m][j^\ast]=\sum_{i\lt j^\ast}(\tau_i+d_i)+(m+1)\tau_{\max}$: the base case $m=0$ holds, and for $m\ge1$ the arrival time is at most $\sum_{i\lt j^\ast}(\tau_i+d_i)+m\,\tau_{\max}=T[m-1][j^\ast]$ — the moment $j^\ast$ becomes free — so $j^\ast$ never idles and the claim follows. Symmetrically, the downstream sub-line $j^\ast+1,\dots,S-1$ (empty if $j^\ast=S-1$) drains the last micro-batch in exactly $\sum_{i\gt j^\ast}\tau_i+\sum_{i=j^\ast}^{S-2}d_i$. The makespan is therefore
 
 $$
-T(M) \;=\; T[M-1][j^*] + \sum_{i\gt j^*}\tau_i+\sum_{i=j^*}^{S-2}d_i
+T(M) \;=\; T[M-1][j^\ast] + \sum_{i\gt j^\ast}\tau_i+\sum_{i=j^\ast}^{S-2}d_i
 \;=\; \sum_j\tau_j+\sum_{j=0}^{S-2}d_j+(M-1)\tau_{\max}.
 $$
 
@@ -219,7 +219,7 @@ This is a subtle but consequential point: under infinite buffers, the *order* of
 **Crossover from fill- to steady-state dominance.** The makespan $T(M)=\sum_j\tau_j+\sum_j d_j+(M-1)\tau_{\max}$ decomposes into a fill cost $F:=\sum_j\tau_j+\sum_j d_j$ and a steady-state term $(M-1)\tau_{\max}$. The two balance at the crossover micro-batch count
 
 $$
-M^{*} \;=\; 1 + \frac{F}{\tau_{\max}} \;=\; 1 + \frac{\sum_j\tau_j+\sum_j d_j}{\tau_{\max}},
+M^{\ast} \;=\; 1 + \frac{F}{\tau_{\max}} \;=\; 1 + \frac{\sum_j\tau_j+\sum_j d_j}{\tau_{\max}},
 $$
 
 below which the fill cost dominates the total and above which the steady-state throughput $\propto 1/\tau_{\max}$ is approached. This is a *smooth crossover*, not a phase transition — unlike the communication phase transition of Corollary 4, which is discontinuous in slope. It nonetheless carries practical force: a serving batch should be sized at or above $M^{\ast}$ for the asymptotic throughput to be a good model. For the illustrative partition ($\tau=[0.5,1,1,5]$, $d=0$), $M^{\ast}=1+7.5/5=2.5$, so even a handful of micro-batches suffices.
@@ -370,7 +370,7 @@ We derived exact closed-form makespan formulas for heterogeneous micro-batch pip
 For $d\equiv0$, recurrence (1) reads $T[m][s]=\max(T[m][s-1],T[m-1][s])+\tau_s$. View the schedule as a grid with $S$ columns (stages) and $M$ rows (micro-batches): $T[m][s]$ is the maximum-weight monotone path from $(0,0)$ to $(m,s)$, where each visited cell $(m,s)$ contributes weight $\tau_s$ and moves are rightward (next stage, same micro-batch) or downward (next micro-batch, same stage). Any such path visits $c_s\ge1$ cells in column $s$, with $\sum_s c_s = M+S-1$, and its total weight is $\sum_s c_s\,\tau_s$. Maximizing this linear objective over $\{c_s\ge1,\ \sum_s c_s=M+S-1\}$ is attained by assigning the $M-1$ surplus cells to the column of maximum $\tau$, i.e. $c_{j^\ast}=M$ and $c_s=1$ for $s\ne j^\ast$. Hence
 
 $$
-T[M-1][S-1] \;=\; M\tau_{\max} + \sum_{s\ne j^*}\tau_s \;=\; (M-1)\tau_{\max}+\sum_s\tau_s .
+T[M-1][S-1] \;=\; M\tau_{\max} + \sum_{s\ne j^\ast}\tau_s \;=\; (M-1)\tau_{\max}+\sum_s\tau_s .
 $$
 
 This is an independent, closed-form proof of Theorem 1 that does not rely on the ASAP schedule, and it makes transparent *why* the bottleneck dominates: the bottleneck's $\tau_{\max}$ is counted $M$ times, while every other stage's $\tau_s$ is counted once.
