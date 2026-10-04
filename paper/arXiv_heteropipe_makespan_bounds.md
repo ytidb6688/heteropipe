@@ -4,7 +4,7 @@
 
 **Technical Report / Preprint** · 2026-10-04
 
-> **中文摘要**：本文给出异构 GPU 集群上大模型推理微批流水线 makespan 的精确刻画，并据此精确量化经典同构 GPipe 公式的误差。在纯前向、无通信、无限缓冲设定下，makespan 精确等于 $T(M)=(M-1)\tau_{\max}+\sum_j\tau_j$（定理 1）；在异步通信设定下推广为 $T(M)=\sum_j\tau_j+\sum_j d_j+(M-1)\tau_{\max}$（定理 2），其中 $\sum_j d_j$ 仅为加性常数；在阻塞通信设定下进一步给出 $T(M)=(M-1)\sigma_{\max}+\sum_s\sigma_s$（定理 3），$\sigma_s=\tau_s+d_s$，通信进入稳态吞吐当且仅当存在 $d_s>\tau_{\max}-\tau_s$，定理 2 与定理 3 夹逼出真实系统的 makespan 上下界。据此精确刻画经典 GPipe 同构公式的系统性偏差（同构高估项与通信忽略低估项之分解），并导出"通信优化 vs 计算均衡"的优化优先级。全部结果经逐点数值验证（误差 <1e−9，含 $1.6\times10^5$ 点随机反例排查、零反例），并以跨三代架构的异构 GPU 划分（RTX 5090 / 3090 / GTX 1070）作示例。
+> **中文摘要**：本文给出异构 GPU 集群上大模型推理微批流水线 makespan 的精确刻画，并据此精确量化经典同构 GPipe 公式的误差。在纯前向、无通信、无限缓冲设定下，makespan 精确等于 $T(M)=(M-1)\tau_{\max}+\sum_j\tau_j$（定理 1）；在异步通信设定下推广为 $T(M)=\sum_j\tau_j+\sum_j d_j+(M-1)\tau_{\max}$（定理 2），其中 $\sum_j d_j$ 仅为加性常数；在阻塞通信设定下进一步给出 $T(M)=(M-1)\sigma_{\max}+\sum_s\sigma_s$（定理 3）， $\sigma_s=\tau_s+d_s$，通信进入稳态吞吐当且仅当存在 $d_s>\tau_{\max}-\tau_s$，定理 2 与定理 3 夹逼出真实系统的 makespan 上下界。据此精确刻画经典 GPipe 同构公式的系统性偏差（同构高估项与通信忽略低估项之分解），并导出"通信优化 vs 计算均衡"的优化优先级。全部结果经逐点数值验证（误差 <1e−9，含 $1.6\times10^5$ 点随机反例排查、零反例），并以跨三代架构的异构 GPU 划分（RTX 5090 / 3090 / GTX 1070）作示例。
 
 ---
 
@@ -52,17 +52,17 @@ $$
 T[m][0] = T[m-1][0] + \tau_0,
 \qquad
 T[m][s] = \max\big(T[m][s-1] + d_{s-1},\ T[m-1][s]\big) + \tau_s \quad (s\ge 1),
-\tag{1}
+\qquad (1)
 $$
 
-with boundary $T[-1][s]=0$. The makespan is $T(M):=T[M-1][S-1]$. We write $\tau_{\max}:=\max_j\tau_j$ and let $j^*:=\arg\max_j\tau_j$ be a bottleneck stage (ties broken arbitrarily). For the blocking regime the recursion collapses to
+with boundary $T[-1][s]=0$. The makespan is $T(M):=T[M-1][S-1]$. We write $\tau_{\max}:=\max_j\tau_j$ and let $j^\ast:=\arg\max_j\tau_j$ be a bottleneck stage (ties broken arbitrarily). For the blocking regime the recursion collapses to
 
 $$
 T[m][0] = T[m-1][0] + \sigma_0,
 \qquad
 T[m][s] = \max\big(T[m][s-1],\ T[m-1][s]\big) + \sigma_s \quad (s\ge 1),
 \qquad \sigma_s := \tau_s + d_s \ (s<S-1),\ \ \sigma_{S-1}:=\tau_{S-1},
-\tag{2}
+\qquad (2)
 $$
 
 which is exactly Eq. (1) with $d\equiv0$ and $\tau$ replaced by $\sigma$.
@@ -75,7 +75,7 @@ which is exactly Eq. (1) with $d\equiv0$ and $\tau$ replaced by $\sigma$.
 | $M$ | number of micro-batches |
 | $\tau_j$ | service time of stage $j$ for one micro-batch |
 | $d_j$ | communication latency from stage $j$ to $j+1$ |
-| $\tau_{\max}$, $j^*$ | bottleneck stage time and its index |
+| $\tau_{\max}$, $j^\ast$ | bottleneck stage time and its index |
 | $\sigma_s$ | effective service time under blocking communication |
 | $T(M)$ | makespan (completion of the last micro-batch at the last stage) |
 
@@ -85,7 +85,7 @@ which is exactly Eq. (1) with $d\equiv0$ and $\tau$ replaced by $\sigma$.
 
 ## 3. Theorem 1 — Communication-Free Closed Form
 
-**Theorem 1.** *In the communication-free setting ($d_j\equiv 0$), for all $M\ge 1$,*
+**Theorem 1.** In the communication-free setting ($d_j\equiv 0$), for all $M\ge 1$,
 
 $$
 T(M) \;=\; (M-1)\,\tau_{\max} \;+\; \sum_{j=0}^{S-1}\tau_j .
@@ -93,14 +93,14 @@ $$
 
 *Proof (critical-path sandwich).* We prove a matching lower and upper bound.
 
-**Lower bound.** Consider any valid schedule. Stage $j^*$ must process all $M$ micro-batches serially, consuming $M\tau_{\max}$ of processor time on $j^*$; these $M$ operations cannot overlap in time. Before the first micro-batch can be processed at $j^*$, it must traverse stages $0,\dots,j^*-1$, costing at least $\sum_{i<j^*}\tau_i$. After the last micro-batch is processed at $j^*$, it must traverse stages $j^*+1,\dots,S-1$, costing at least $\sum_{i>j^*}\tau_i$. These three time spans are pairwise disjoint on the timeline (a single micro-batch experiences them sequentially, and the bottleneck's $M$ operations bracket the traversal of all others). Hence
+**Lower bound.** Consider any valid schedule. Stage $j^\ast$ must process all $M$ micro-batches serially, consuming $M\tau_{\max}$ of processor time on $j^\ast$; these $M$ operations cannot overlap in time. Before the first micro-batch can be processed at $j^\ast$, it must traverse stages $0,\dots,j^\ast-1$, costing at least $\sum_{i<j^\ast}\tau_i$. After the last micro-batch is processed at $j^\ast$, it must traverse stages $j^\ast+1,\dots,S-1$, costing at least $\sum_{i>j^\ast}\tau_i$. These three time spans are pairwise disjoint on the timeline (a single micro-batch experiences them sequentially, and the bottleneck's $M$ operations bracket the traversal of all others). Hence
 
 $$
 T(M) \;\ge\; \sum_{i<j^*}\tau_i + M\tau_{\max} + \sum_{i>j^*}\tau_i
 \;=\; (M-1)\tau_{\max} + \sum_j\tau_j .
 $$
 
-**Upper bound (attainability).** We prove the upper bound by strong induction on the number of stages $S$. *Base case* ($S=1$): there is no communication and $T(M)=M\tau_0=(M-1)\tau_{\max}+\tau_0$. *Inductive step* ($S\ge2$). Let $j^*=\arg\max_j\tau_j$ and run the greedy ASAP schedule (every stage starts a micro-batch the moment it is idle and the micro-batch has completed the previous stage). If $j^*=0$, the source stage works continuously for $M\tau_{\max}$ and the last micro-batch drains in $\sum_{i>0}\tau_i$, attaining the bound. If $j^*\ge1$, the upstream sub-line $0,\dots,j^*-1$ has $j^*<S$ stages, so by the induction hypothesis it delivers micro-batch $m$ to $j^*$ by time $\sum_{i<j^*}\tau_i+m\,\tau_{\uparrow}$ with $\tau_{\uparrow}:=\max_{i<j^*}\tau_i\le\tau_{\max}$; since $j^*$ spends exactly $\tau_{\max}$ per micro-batch, the arrival rate is never below its service rate, so $j^*$ never idles after the first micro-batch arrives. Symmetrically, the downstream sub-line $j^*+1,\dots,S-1$ (empty if $j^*=S-1$) drains the last micro-batch in $\sum_{i>j^*}\tau_i$. The schedule is feasible and achieves
+**Upper bound (attainability).** We prove the upper bound by strong induction on the number of stages $S$. *Base case* ($S=1$): there is no communication and $T(M)=M\tau_0=(M-1)\tau_{\max}+\tau_0$. *Inductive step* ($S\ge2$). Let $j^\ast=\arg\max_j\tau_j$ and run the greedy ASAP schedule (every stage starts a micro-batch the moment it is idle and the micro-batch has completed the previous stage). If $j^\ast=0$, the source stage works continuously for $M\tau_{\max}$ and the last micro-batch drains in $\sum_{i>0}\tau_i$, attaining the bound. If $j^\ast\ge1$, the upstream sub-line $0,\dots,j^\ast-1$ has $j^\ast<S$ stages, so by the induction hypothesis it delivers micro-batch $m$ to $j^\ast$ by time $\sum_{i<j^\ast}\tau_i+m\,\tau_{\uparrow}$ with $\tau_{\uparrow}:=\max_{i<j^\ast}\tau_i\le\tau_{\max}$; since $j^\ast$ spends exactly $\tau_{\max}$ per micro-batch, the arrival rate is never below its service rate, so $j^\ast$ never idles after the first micro-batch arrives. Symmetrically, the downstream sub-line $j^\ast+1,\dots,S-1$ (empty if $j^\ast=S-1$) drains the last micro-batch in $\sum_{i>j^\ast}\tau_i$. The schedule is feasible and achieves
 
 $$
 T(M) \;=\; \sum_{i<j^*}\tau_i + M\tau_{\max} + \sum_{i>j^*}\tau_i \;=\; (M-1)\tau_{\max} + \sum_j\tau_j .
@@ -116,11 +116,11 @@ $$
 T_c - T(M) = \sum_j(\tau_{\max}-\tau_j) \ge 0,
 $$
 
-i.e., the classic formula **systematically overestimates** makespan (equivalently, underestimates throughput), with the gap equal to the total shortfall of each stage relative to the bottleneck. The gap grows monotonically with heterogeneity, is zero iff all stages are perfectly balanced, and — critically — is *independent of $M$*: it is a one-time fill cost, not a throughput penalty.
+i.e., the classic formula **systematically overestimates** makespan (equivalently, underestimates throughput), with the gap equal to the total shortfall of each stage relative to the bottleneck. The gap grows monotonically with heterogeneity, is zero iff all stages are perfectly balanced, and — critically — is independent of $M$: it is a one-time fill cost, not a throughput penalty.
 
 ### 3.1 Illustrative example
 
-To make the formula concrete, walk through the illustrative 4-stage partition 5090/3090/3090/1070 with $\tau=[0.5,1,1,5]$ ($S=4$, bottleneck at the tail, $j^*=3$). For a single micro-batch ($M=1$) the makespan is simply the sum of stage times:
+To make the formula concrete, walk through the illustrative 4-stage partition 5090/3090/3090/1070 with $\tau=[0.5,1,1,5]$ ($S=4$, bottleneck at the tail, $j^\ast=3$). For a single micro-batch ($M=1$) the makespan is simply the sum of stage times:
 
 $$
 T(1) = (1-1)\cdot 5 + (0.5+1+1+5) = 7.5 .
@@ -132,7 +132,7 @@ The classic formula instead predicts $T_c=(S+M-1)\tau_{\max}=(4+1-1)\cdot 5=20$,
 
 ## 4. Theorem 2 — Asynchronous Communication Extension
 
-**Theorem 2.** *Under asynchronous communication, for all $M\ge 1$,*
+**Theorem 2.** Under asynchronous communication, for all $M\ge 1$,
 
 $$
 T(M) \;=\; \sum_{j=0}^{S-1}\tau_j \;+\; \sum_{j=0}^{S-2} d_j \;+\; (M-1)\,\tau_{\max} .
@@ -140,14 +140,14 @@ $$
 
 *Proof (critical-path sandwich).*
 
-**Lower bound.** Consider the critical path through the bottleneck stage $j^*$. Stage $j^*$ must process all $M$ micro-batches serially, consuming $M\tau_{\max}$. The first micro-batch traverses stages $0,\dots,j^*-1$ before reaching $j^*$, paying $\sum_{i<j^*}\tau_i+\sum_{i<j^*}d_i$: on the first micro-batch's path, its own computation and its transfers are serialized (a transfer of micro-batch $0$ from stage $i$ to $i+1$ cannot begin until stage $i$ has computed it, and stage $i+1$ cannot compute it until the transfer ends). After the last micro-batch leaves $j^*$, it traverses stages $j^*+1,\dots,S-1$, paying $\sum_{i>j^*}\tau_i+\sum_{i=j^*}^{S-2}d_i$. These three phases are pairwise disjoint on the timeline, and every valid schedule must contain them on some critical path; hence
+**Lower bound.** Consider the critical path through the bottleneck stage $j^\ast$. Stage $j^\ast$ must process all $M$ micro-batches serially, consuming $M\tau_{\max}$. The first micro-batch traverses stages $0,\dots,j^\ast-1$ before reaching $j^\ast$, paying $\sum_{i<j^\ast}\tau_i+\sum_{i<j^\ast}d_i$: on the first micro-batch's path, its own computation and its transfers are serialized (a transfer of micro-batch $0$ from stage $i$ to $i+1$ cannot begin until stage $i$ has computed it, and stage $i+1$ cannot compute it until the transfer ends). After the last micro-batch leaves $j^\ast$, it traverses stages $j^\ast+1,\dots,S-1$, paying $\sum_{i>j^\ast}\tau_i+\sum_{i=j^\ast}^{S-2}d_i$. These three phases are pairwise disjoint on the timeline, and every valid schedule must contain them on some critical path; hence
 
 $$
 T(M) \;\ge\; \sum_{i<j^*}\tau_i+\sum_{i<j^*}d_i + M\tau_{\max} + \sum_{i>j^*}\tau_i+\sum_{i=j^*}^{S-2}d_i
 \;=\; \sum_j\tau_j + \sum_{j=0}^{S-2}d_j + (M-1)\tau_{\max}.
 $$
 
-**Upper bound (attainability).** We prove the upper bound by strong induction on the number of stages $S$. *Base case* ($S=1$): there is no communication and $T(M)=M\tau_0=(M-1)\tau_{\max}+\tau_0$. *Inductive step* ($S\ge2$). Let $j^*=\arg\max_j\tau_j$ and run the fill–drain schedule (micro-batches released in order $0,1,\dots,M-1$, every stage ASAP). If $j^*=0$, the source stage works continuously for $M\tau_{\max}$ and the last micro-batch drains through stages $1,\dots,S-1$ in $\sum_{i>0}\tau_i+\sum_{i=0}^{S-2}d_i$, attaining the bound. If $j^*\ge1$, the upstream sub-line $0,\dots,j^*-1$ has $j^*<S$ stages, so by the induction hypothesis (Theorem 2 for $j^*$ stages) it delivers micro-batch $m$ to $j^*$ — that is, completes stage $j^*-1$ and its send — by time $\sum_{i<j^*}(\tau_i+d_i)+m\,\tau_{\uparrow}$ with $\tau_{\uparrow}:=\max_{i<j^*}\tau_i\le\tau_{\max}$. Because sends are asynchronous, an upstream stage's *service* period is exactly $\tau_i$ (transfers run in the background on a separate stream, consuming memory bandwidth but not SM compute), so this arrival bound carries no slowdown from the sub-line's own transfers beyond the additive $\sum_{i<j^*}d_i$ already accounted for. We then prove by induction on $m$ that $T[m][j^*]=\sum_{i<j^*}(\tau_i+d_i)+(m+1)\tau_{\max}$: the base case $m=0$ holds, and for $m\ge1$ the arrival time is at most $\sum_{i<j^*}(\tau_i+d_i)+m\,\tau_{\max}=T[m-1][j^*]$ — the moment $j^*$ becomes free — so $j^*$ never idles and the claim follows. Symmetrically, the downstream sub-line $j^*+1,\dots,S-1$ (empty if $j^*=S-1$) drains the last micro-batch in exactly $\sum_{i>j^*}\tau_i+\sum_{i=j^*}^{S-2}d_i$. The makespan is therefore
+**Upper bound (attainability).** We prove the upper bound by strong induction on the number of stages $S$. *Base case* ($S=1$): there is no communication and $T(M)=M\tau_0=(M-1)\tau_{\max}+\tau_0$. *Inductive step* ($S\ge2$). Let $j^\ast=\arg\max_j\tau_j$ and run the fill–drain schedule (micro-batches released in order $0,1,\dots,M-1$, every stage ASAP). If $j^\ast=0$, the source stage works continuously for $M\tau_{\max}$ and the last micro-batch drains through stages $1,\dots,S-1$ in $\sum_{i>0}\tau_i+\sum_{i=0}^{S-2}d_i$, attaining the bound. If $j^\ast\ge1$, the upstream sub-line $0,\dots,j^\ast-1$ has $j^\ast<S$ stages, so by the induction hypothesis (Theorem 2 for $j^\ast$ stages) it delivers micro-batch $m$ to $j^\ast$ — that is, completes stage $j^\ast-1$ and its send — by time $\sum_{i<j^\ast}(\tau_i+d_i)+m\,\tau_{\uparrow}$ with $\tau_{\uparrow}:=\max_{i<j^\ast}\tau_i\le\tau_{\max}$. Because sends are asynchronous, an upstream stage's *service* period is exactly $\tau_i$ (transfers run in the background on a separate stream, consuming memory bandwidth but not SM compute), so this arrival bound carries no slowdown from the sub-line's own transfers beyond the additive $\sum_{i<j^\ast}d_i$ already accounted for. We then prove by induction on $m$ that $T[m][j^\ast]=\sum_{i<j^\ast}(\tau_i+d_i)+(m+1)\tau_{\max}$: the base case $m=0$ holds, and for $m\ge1$ the arrival time is at most $\sum_{i<j^\ast}(\tau_i+d_i)+m\,\tau_{\max}=T[m-1][j^\ast]$ — the moment $j^\ast$ becomes free — so $j^\ast$ never idles and the claim follows. Symmetrically, the downstream sub-line $j^\ast+1,\dots,S-1$ (empty if $j^\ast=S-1$) drains the last micro-batch in exactly $\sum_{i>j^\ast}\tau_i+\sum_{i=j^\ast}^{S-2}d_i$. The makespan is therefore
 
 $$
 T(M) \;=\; T[M-1][j^*] + \sum_{i>j^*}\tau_i+\sum_{i=j^*}^{S-2}d_i
@@ -170,7 +170,7 @@ When $\sum_j d_j > \sum_j(\tau_{\max}-\tau_j)$, the classic formula **underestim
 
 ## 5. Theorem 3 — Blocking Communication Extension
 
-**Theorem 3.** *Under blocking communication — where sending a micro-batch occupies the stage and cannot overlap computation — define the effective service time $\sigma_s=\tau_s+d_s$ for $0\le s\le S-2$ and $\sigma_{S-1}=\tau_{S-1}$ (the last stage sends nothing), with $\sigma_{\max}:=\max_s\sigma_s$. Then for all $M\ge 1$,*
+**Theorem 3.** Under blocking communication — where sending a micro-batch occupies the stage and cannot overlap computation — define the effective service time $\sigma_s=\tau_s+d_s$ for $0\le s\le S-2$ and $\sigma_{S-1}=\tau_{S-1}$ (the last stage sends nothing), with $\sigma_{\max}:=\max_s\sigma_s$. Then for all $M\ge 1$,
 
 $$
 T(M) \;=\; (M-1)\,\sigma_{\max} \;+\; \sum_{s=0}^{S-1}\sigma_s
@@ -206,13 +206,13 @@ Theorems 2–3 yield an actionable priority ordering for heterogeneous inference
 3. **Heterogeneity-aware scheduling.** With per-stage $\tau_j$ known, the bias $\sum_j(\tau_{\max}-\tau_j)$ quantifies how far a given partition is from homogeneous — a concrete, differentiable-in-spirit objective for the partitioner.
 4. **Overlap is a bounded lever.** Theorem 3 bounds the total gain from communication–compute overlap (CUDA streams / NCCL async) at $(M-1)(\sigma_{\max}-\tau_{\max})$; once $d_s\le\tau_{\max}-\tau_s$ holds everywhere, link optimizations cannot beat balancing compute.
 
-**Proposition 1 (throughput is compute-balanced regardless of link budget).** *In the asynchronous regime, for any fixed partition, the asymptotic throughput $1/(T(M)/M)\to 1/\tau_{\max}$ as $M\to\infty$ depends only on the bottleneck stage time and not on any $d_j$. In the blocking regime the asymptotic throughput is $1/\sigma_{\max}$, and the two coincide iff $d_s\le\tau_{\max}-\tau_s$ for all $s$.*
+**Proposition 1 (throughput is compute-balanced regardless of link budget).** In the asynchronous regime, for any fixed partition, the asymptotic throughput $1/(T(M)/M)\to 1/\tau_{\max}$ as $M\to\infty$ depends only on the bottleneck stage time and not on any $d_j$. In the blocking regime the asymptotic throughput is $1/\sigma_{\max}$, and the two coincide iff $d_s\le\tau_{\max}-\tau_s$ for all $s$.
 
 *Proof.* Immediate from Theorems 2 and 3 by dividing by $M$ and taking the limit. ∎
 
-**Proposition 2 (bottleneck position is irrelevant to makespan).** *In the communication-free and asynchronous regimes, the makespan depends on the bottleneck only through $\tau_{\max}$, not on its position $j^*$. Reordering stages so as to move the bottleneck therefore does not change $T(M)$ (hence not the steady-state throughput); it changes only the first-micro-batch latency.*
+**Proposition 2 (bottleneck position is irrelevant to makespan).** In the communication-free and asynchronous regimes, the makespan depends on the bottleneck only through $\tau_{\max}$, not on its position $j^\ast$. Reordering stages so as to move the bottleneck therefore does not change $T(M)$ (hence not the steady-state throughput); it changes only the first-micro-batch latency.
 
-*Proof.* The closed forms of Theorems 1 and 2 contain $j^*$ only via $\tau_{\max}$, and $\sum_j\tau_j$ and $\sum_j d_j$ are invariant under stage reordering. ∎
+*Proof.* The closed forms of Theorems 1 and 2 contain $j^\ast$ only via $\tau_{\max}$, and $\sum_j\tau_j$ and $\sum_j d_j$ are invariant under stage reordering. ∎
 
 This is a subtle but consequential point: under infinite buffers, the *order* of a heterogeneous chain is immaterial to total makespan. The optimization effort should therefore target $\tau_{\max}$ itself — splitting the layers assigned to the slowest device and redistributing them to faster devices — rather than repositioning the bottleneck within the chain. (The statement does **not** extend to the blocking regime: there, $\sigma_{\max}=\max_s(\tau_s+d_s)$ depends on which stage carries which link, so position matters once communication exceeds slack.) Together with Proposition 1, this gives a clean two-phase optimization rule: (i) first reduce $\tau_{\max}$ by rebalancing the partition (the dominant term in the slope); (ii) only then, if the remaining compute slack $\tau_{\max}-\tau_s$ is smaller than the link latency on some stage, invest in overlap or link bandwidth for that stage — and only for that stage.
 
@@ -222,7 +222,7 @@ $$
 M^{*} \;=\; 1 + \frac{F}{\tau_{\max}} \;=\; 1 + \frac{\sum_j\tau_j+\sum_j d_j}{\tau_{\max}},
 $$
 
-below which the fill cost dominates the total and above which the steady-state throughput $\propto 1/\tau_{\max}$ is approached. This is a *smooth crossover*, not a phase transition — unlike the communication phase transition of Corollary 4, which is discontinuous in slope. It nonetheless carries practical force: a serving batch should be sized at or above $M^{*}$ for the asymptotic throughput to be a good model. For the illustrative partition ($\tau=[0.5,1,1,5]$, $d=0$), $M^{*}=1+7.5/5=2.5$, so even a handful of micro-batches suffices.
+below which the fill cost dominates the total and above which the steady-state throughput $\propto 1/\tau_{\max}$ is approached. This is a *smooth crossover*, not a phase transition — unlike the communication phase transition of Corollary 4, which is discontinuous in slope. It nonetheless carries practical force: a serving batch should be sized at or above $M^{\ast}$ for the asymptotic throughput to be a good model. For the illustrative partition ($\tau=[0.5,1,1,5]$, $d=0$), $M^{\ast}=1+7.5/5=2.5$, so even a handful of micro-batches suffices.
 
 ---
 
@@ -266,7 +266,7 @@ Theorems 1–3 and their corollaries are validated above by exact dynamic-progra
 
 **Data source.** We mined the audit logs of our production LLM-inference gateway (UIG), which dispatches requests to heterogeneous GPU hosts (RTX 5090 Laptop, dual RTX 3090, RTX 3080, Tesla P40, plus cloud endpoints) running legalone (1.7B/4B/8B) and a range of embedding/LLM models. The logs record, per completed request, the serving host, the model, the host compute time `duration_s`, and the end-to-end time `total_s = duration_s + queue_wait_s`. Across 2026-09-03 – 2026-10-04 the logs contain **8,571 completed requests**; we take the *empirical minimum* `duration_s` per (model, host) as a lower-bound estimate of the per-micro-batch service time $\tau_j$ (the shortest observed request on an otherwise idle GPU).
 
-**Corollary 1 — the GPipe homogeneity bias is a real, constant overhead.** We assemble the three GPU generations actually used for `legalone:8b` into a 3-stage heterogeneous pipeline with lower-bound service times $\tau = (1.13,\ 2.90,\ 2.62)$ s (RTX 5090 / RTX 3090-97 / RTX 3090-98). Theorem 1 gives $T(M) = (M-1)\tau_{\max} + \sum_j\tau_j$; the classic homogeneous GPipe formula assumes every stage equals $\tau_{\max}$ and gives $T_{\text{GPipe}}(M) = (S+M-1)\tau_{\max}$. Their difference is exactly $\sum_j(\tau_{\max}-\tau_j) = 2.05$ s — *constant in $M$*, as Corollary 1 predicts. At $M=1$ the homogeneous formula over-predicts by $30.8\%$; the relative error decays to $0.7\%$ by $M=100$, but the *absolute* 2.05 s over-provisioning never disappears. When we instead assemble a 5-host `qwen2.5:7b` pipeline that includes a slow Turing host ($\tau_{\max}=30.1$ s), the constant bias balloons to $119.8$ s — quantitatively demonstrating that the homogeneity error scales with the *spread* of $\tau_j$, not with batch size. The production scheduler already places stages heterogeneously and therefore realizes the lower, correct makespan; a homogeneous planner would have over-provisioned by precisely this constant. (Caveat: the `duration_s` minimum conflates short outputs with long ones, so $\tau_j$ is a lower-bound proxy; the *direction* of the bias — homogeneous over-prediction — is robust to this.)
+**Corollary 1 — the GPipe homogeneity bias is a real, constant overhead.** We assemble the three GPU generations actually used for `legalone:8b` into a 3-stage heterogeneous pipeline with lower-bound service times $\tau = (1.13,\ 2.90,\ 2.62)$ s (RTX 5090 / RTX 3090-97 / RTX 3090-98). Theorem 1 gives $T(M) = (M-1)\tau_{\max} + \sum_j\tau_j$; the classic homogeneous GPipe formula assumes every stage equals $\tau_{\max}$ and gives $T_{\text{GPipe}}(M) = (S+M-1)\tau_{\max}$. Their difference is exactly $\sum_j(\tau_{\max}-\tau_j) = 2.05$ s — constant in $M$, as Corollary 1 predicts. At $M=1$ the homogeneous formula over-predicts by $30.8\%$; the relative error decays to $0.7\%$ by $M=100$, but the *absolute* 2.05 s over-provisioning never disappears. When we instead assemble a 5-host `qwen2.5:7b` pipeline that includes a slow Turing host ($\tau_{\max}=30.1$ s), the constant bias balloons to $119.8$ s — quantitatively demonstrating that the homogeneity error scales with the *spread* of $\tau_j$, not with batch size. The production scheduler already places stages heterogeneously and therefore realizes the lower, correct makespan; a homogeneous planner would have over-provisioned by precisely this constant. (Caveat: the `duration_s` minimum conflates short outputs with long ones, so $\tau_j$ is a lower-bound proxy; the *direction* of the bias — homogeneous over-prediction — is robust to this.)
 
 **Corollary 5 — the sandwich direction is borne out at the request level.** For all 8,571 completed requests, `total_s ≥ duration_s` (equivalently `queue_wait_s ≥ 0`): each request's end-to-end time exceeds its own compute, which is the *single-request* analogue of the Corollary 5 direction $T_{\text{real}} \ge T_{\text{async}}$. We stress that this is a per-request latency fact, not a measurement of the *system* makespan — for $M$ micro-batches $T_{\text{async}}=(M-1)\tau_{\max}+\sum_j\tau_j+\sum_j d_j$, far larger than a single $\tau_j$ — and is therefore consistent with, but does not itself validate, the Corollary 5 sandwich (cf. §9). Queueing is pervasive: $61.8\%$ of requests incur a non-zero wait (median $0.001$ s, max $273.6$ s). On the busiest host (RTX 5090, `legalone:8b`, $n=5{,}049$) the median end-to-end latency is $8.59$ s versus $1.13$ s on an otherwise-idle GPU — a **$7.6\times$ expansion driven by queueing and contention** — which is exactly the load regime in which the *upper* (blocking) edge of the sandwich would bind for the full pipeline, and in which the overlap-gain ceiling of Corollary 5 is tightest. Figure 5 plots, on the left, the constant Corollary-1 bias for the `legalone:8b` pipeline; on the right, the per-host median points, all above the $T_{\text{real}} = T_{\text{async}}$ diagonal (single-request level).
 
@@ -284,7 +284,7 @@ We state the connection to the scheduling textbook explicitly, because the singl
 
 $$ T_{\text{LP}} = (M-1)p_{\max} + \sum_{j=1}^{S} p_j, $$
 
-which is exactly the critical-path / CPM lower bound of Kelley and Walker [4] specialized to a chain. Graham's list-scheduling bound [2] shows it is *attainable*: for unrelated machines Graham proves $T \le (2-1/m)C_{\max}^{*}$, and equality is achieved when the precedence graph is a chain, because no stage can start before its predecessor finishes and no stage can finish before its predecessor does. Johnson [3] characterized the optimal schedules for the two- and three-stage permutation flow shop, confirming the identity is tight at these small widths. For homogeneous stages $p_j = \tau$ this reduces to the GPipe formula $T_{\text{GPipe}}(M) = (S+M-1)\tau$. Theorem 1 is therefore the heterogeneous ($p_j = \tau_j$) restatement of this identity; we claim no priority for it. HEFT [5] extends list scheduling to general heterogeneous DAGs by ranking tasks on upward rank and assigning each to its earliest-finishing processor — our serial pipeline is the special case in which the DAG is a *chain*, and that structural restriction is precisely what makes a closed form, rather than a heuristic, attainable.
+which is exactly the critical-path / CPM lower bound of Kelley and Walker [4] specialized to a chain. Graham's list-scheduling bound [2] shows it is *attainable*: for unrelated machines Graham proves $T \le (2-1/m)C_{\max}^{\ast}$, and equality is achieved when the precedence graph is a chain, because no stage can start before its predecessor finishes and no stage can finish before its predecessor does. Johnson [3] characterized the optimal schedules for the two- and three-stage permutation flow shop, confirming the identity is tight at these small widths. For homogeneous stages $p_j = \tau$ this reduces to the GPipe formula $T_{\text{GPipe}}(M) = (S+M-1)\tau$. Theorem 1 is therefore the heterogeneous ($p_j = \tau_j$) restatement of this identity; we claim no priority for it. HEFT [5] extends list scheduling to general heterogeneous DAGs by ranking tasks on upward rank and assigning each to its earliest-finishing processor — our serial pipeline is the special case in which the DAG is a *chain*, and that structural restriction is precisely what makes a closed form, rather than a heuristic, attainable.
 
 **What is new.** The contribution is not the identity but three consequences that the flow-shop literature states only for the homogeneous or general-DAG case and that the LLM-systems literature does not state at all:
 
@@ -335,7 +335,7 @@ the effective steady-state slope is $\tau_{\max}+(1-\rho)\,(\sigma_{\max}-\tau_{
 
 **Queueing evidence from production logs.** The cluster behind this work operates a culture-and-tourism knowledge-base service on the heterogeneous host pool of §1. Across the $8.57\times10^3$ completed requests that carried per-request timestamps, $61.8\%$ waited in queue (mean $0.42$ s, max $274$ s). We report this as **system-level evidence, not a validation of Theorems 2–3** — the logs are dispatch counters, not makespan measurements — but it is direct, log-visible confirmation of the direction $T_{\text{real}}>T_{\text{async}}$: real requests are delayed beyond the ideal makespan whenever contention is present.
 
-**Measured heterogeneity.** The same logs let us *measure*, rather than assume, the per-stage time heterogeneity of §1. On the $4{,}981$ completed `legalone:8b` requests carrying per-request timestamps, the minimum (near-exclusive, low-queue) duration was $1.13$ s on the RTX 5090 Laptop versus $2.6$–$2.9$ s on the dual RTX 3090 — a $2.3\times$ spread. We caution against reading this as a clean hardware ratio: the minimum duration also folds in output-length differences between the shortest requests, so $2.3\times$ is an upper bound rather than a throughput measurement. The median, however, *inverts* the picture regardless of hardware: $8.57$ s on the 5090 versus $4.6$–$4.8$ s on the 3090s, because the 5090 carried $4{,}981$ requests while each 3090 carried $\sim20$. The same effect appears even between *identical* GPUs: `bge-m3` medians on the two RTX 3090 hosts were $0.050$ s and $0.017$ s — a $3\times$ gap attributable purely to load. The decisive point is that $\tau_j$ is *load*-dominated, not hardware-dominated: the $1.13$ s-to-$8.57$ s spread between exclusive and loaded service on the same host shows the per-stage time is the state-dependent effect (assumption A4, §10(v)) that the closed forms deliberately abstract away — and that a follow-on stochastic refinement should capture.
+**Measured heterogeneity.** The same logs let us *measure*, rather than assume, the per-stage time heterogeneity of §1. On the $4{,}981$ completed `legalone:8b` requests carrying per-request timestamps, the minimum (near-exclusive, low-queue) duration was $1.13$ s on the RTX 5090 Laptop versus $2.6$– $2.9$ s on the dual RTX 3090 — a $2.3\times$ spread. We caution against reading this as a clean hardware ratio: the minimum duration also folds in output-length differences between the shortest requests, so $2.3\times$ is an upper bound rather than a throughput measurement. The median, however, *inverts* the picture regardless of hardware: $8.57$ s on the 5090 versus $4.6$– $4.8$ s on the 3090s, because the 5090 carried $4{,}981$ requests while each 3090 carried $\sim20$. The same effect appears even between *identical* GPUs: `bge-m3` medians on the two RTX 3090 hosts were $0.050$ s and $0.017$ s — a $3\times$ gap attributable purely to load. The decisive point is that $\tau_j$ is *load*-dominated, not hardware-dominated: the $1.13$ s-to-$8.57$ s spread between exclusive and loaded service on the same host shows the per-stage time is the state-dependent effect (assumption A4, §10(v)) that the closed forms deliberately abstract away — and that a follow-on stochastic refinement should capture.
 
 ---
 
@@ -367,7 +367,7 @@ We derived exact closed-form makespan formulas for heterogeneous micro-batch pip
 
 ### A.1 Direct solution of the communication-free recurrence (longest-path view)
 
-For $d\equiv0$, recurrence (1) reads $T[m][s]=\max(T[m][s-1],T[m-1][s])+\tau_s$. View the schedule as a grid with $S$ columns (stages) and $M$ rows (micro-batches): $T[m][s]$ is the maximum-weight monotone path from $(0,0)$ to $(m,s)$, where each visited cell $(m,s)$ contributes weight $\tau_s$ and moves are rightward (next stage, same micro-batch) or downward (next micro-batch, same stage). Any such path visits $c_s\ge1$ cells in column $s$, with $\sum_s c_s = M+S-1$, and its total weight is $\sum_s c_s\,\tau_s$. Maximizing this linear objective over $\{c_s\ge1,\ \sum_s c_s=M+S-1\}$ is attained by assigning the $M-1$ surplus cells to the column of maximum $\tau$, i.e. $c_{j^*}=M$ and $c_s=1$ for $s\ne j^*$. Hence
+For $d\equiv0$, recurrence (1) reads $T[m][s]=\max(T[m][s-1],T[m-1][s])+\tau_s$. View the schedule as a grid with $S$ columns (stages) and $M$ rows (micro-batches): $T[m][s]$ is the maximum-weight monotone path from $(0,0)$ to $(m,s)$, where each visited cell $(m,s)$ contributes weight $\tau_s$ and moves are rightward (next stage, same micro-batch) or downward (next micro-batch, same stage). Any such path visits $c_s\ge1$ cells in column $s$, with $\sum_s c_s = M+S-1$, and its total weight is $\sum_s c_s\,\tau_s$. Maximizing this linear objective over $\{c_s\ge1,\ \sum_s c_s=M+S-1\}$ is attained by assigning the $M-1$ surplus cells to the column of maximum $\tau$, i.e. $c_{j^\ast}=M$ and $c_s=1$ for $s\ne j^\ast$. Hence
 
 $$
 T[M-1][S-1] \;=\; M\tau_{\max} + \sum_{s\ne j^*}\tau_s \;=\; (M-1)\tau_{\max}+\sum_s\tau_s .
