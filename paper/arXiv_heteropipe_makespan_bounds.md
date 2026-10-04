@@ -126,7 +126,7 @@ $$
 T(1) = (1-1)\cdot 5 + (0.5+1+1+5) = 7.5 .
 $$
 
-The classic formula instead predicts $T_c=(S+M-1)\tau_{\max}=(4+1-1)\cdot 5=20$, overestimating by $(20-7.5)/7.5=166.7\%$. At $M=8$ the closed form gives $T(8)=7\cdot 5+7.5=42.5$ against $T_c=(4+8-1)\cdot 5=55$, a $29.4\%$ overestimate. The absolute gap is constant ($55-42.5=12.5=\sum_j(\tau_{\max}-\tau_j)$), so its *relative* impact shrinks as $M$ grows — the classic formula's error is purely a fill-time artifact, exactly as Corollary 1 states. This one number — $166.7\%$ at $M=1$ — is the headline empirical motivation: a partitioner trusting the homogeneous formula at low micro-batch counts over-provisions capacity by more than a factor of two.
+The classic formula instead predicts $T_c=(S+M-1)\tau_{\max}=(4+1-1)\cdot 5=20$, overestimating by $(20-7.5)/7.5=166.7\%$. At $M=8$ the closed form gives $T(8)=7\cdot 5+7.5=42.5$ against $T_c=(4+8-1)\cdot 5=55$, a $29.4\%$ overestimate. The absolute gap is constant: $55-42.5=12.5=\sum_j(\tau_{\max}-\tau_j)$, so its *relative* impact shrinks as $M$ grows — the classic formula's error is purely a fill-time artifact, exactly as Corollary 1 states. This one number — $166.7\%$ at $M=1$ — is the headline empirical motivation: a partitioner trusting the homogeneous formula at low micro-batch counts over-provisions capacity by more than a factor of two.
 
 ---
 
