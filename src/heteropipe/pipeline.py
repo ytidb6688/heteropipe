@@ -1,3 +1,6 @@
+# Copyright (c) 2026 ZHU Wenbo (Yantai Vocational College of Culture and Tourism).
+# SPDX-License-Identifier: MIT
+
 """High-level ``Pipeline`` object that aggregates every closed form.
 
 Use :class:`Pipeline` when you want all quantities at once; use the pure

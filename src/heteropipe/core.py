@@ -1,3 +1,6 @@
+# Copyright (c) 2026 ZHU Wenbo (Yantai Vocational College of Culture and Tourism).
+# SPDX-License-Identifier: MIT
+
 """Core closed-form formulas.
 
 Notation (identical to the reference preprint):

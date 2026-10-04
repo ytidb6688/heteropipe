@@ -1,3 +1,6 @@
+# Copyright (c) 2026 ZHU Wenbo (Yantai Vocational College of Culture and Tourism).
+# SPDX-License-Identifier: MIT
+
 """Tests for the closed-form formulas.
 
 These tests pin the formulas to the paper's own worked examples:
