@@ -14,3 +14,8 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Raw (pre-deidentification) extraction artifacts — contain internal host labels
+# and external endpoint names. The de-identified dataset is data/real_vs_formula.csv.
+db_facts_real_vs_formula.json
+db_facts/

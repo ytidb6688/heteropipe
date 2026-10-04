@@ -87,6 +87,20 @@ formulas:
 
 Open either directly in a browser, or serve with `python -m http.server`.
 
+## Dataset
+
+`data/real_vs_formula.csv` is the de-identified, per-(model, node) production
+trace (8,571 completed requests, 2026-09-03 → 2026-10-04) that backs §7.2 and
+Figure 5 of the preprint. Host identifiers are mapped to anonymized `node-N`
+labels; no IP addresses, timestamps, request IDs, or payloads are published.
+See `data/DATA.md` for the data dictionary and provenance, and
+`data/DATA_LICENSE.md` for terms. Regenerate with:
+
+```bash
+python scripts/extract_tau_real.py > db_facts_real_vs_formula.json
+python scripts/make_dataset_csv.py
+```
+
 ## Cite
 
 ```bibtex
@@ -102,4 +116,5 @@ Open either directly in a browser, or serve with `python -m http.server`.
 
 ## License
 
-Apache 2.0 — see `LICENSE`.
+Code and documentation: **Apache 2.0** — see `LICENSE`.
+Dataset (`data/`): **CC-BY-4.0** — see `data/DATA_LICENSE.md`.
