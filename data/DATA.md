@@ -40,10 +40,9 @@ into this CSV.
 
 ## De-identification
 
-The raw log records contain a `host` field (revealing the internal host-naming
-scheme, e.g. `host-rtx3090-97`) and external dependencies
-(`host-ollama-100`, `cloud-siliconflow`), plus a `request_id` and a `ts`
-timestamp. **None of these appear in the published dataset:**
+The raw log records contain a `host` field (encoding the internal host-naming
+scheme and external dependencies), plus a `request_id` and a `ts` timestamp.
+**None of these appear in the published dataset:**
 
 - `host` → a neutral `node-N` label (mapping below).
 - `request_id`, `ts`, payload text, and any IP address are **dropped** during
@@ -59,19 +58,11 @@ or external endpoint names.
 
 ### Node dictionary (anonymized)
 
-| node | description (de-identified) |
-|---|---|
-| node-01 | Internal gateway node, RTX 5090 laptop — primary `legalone:8b` host (n=5049) |
-| node-02 | Internal node, RTX 3090 |
-| node-03 | Internal node, RTX 3090 |
-| node-04 | Internal node, RTX 3080 |
-| node-05 | Internal node, RTX 3080 |
-| node-06 | Internal node, Tesla P40 |
-| node-07 | Remote cloud embedding API (siliconflow) |
-| node-08 | External Ollama endpoint |
-| node-09 | External Ollama endpoint |
-| node-10 | External Ollama endpoint |
-| node-11 | External Ollama endpoint |
+Each `node-N` is a distinct serving endpoint. GPU generation varies across
+nodes (from consumer-grade to datacenter-class accelerators); that variation in
+per-request service time is the scientific signal the paper exploits. No GPU
+model, host name, IP address, or external endpoint name is disclosed — the
+mapping from internal identifier to `node-N` is one-way and irreversible.
 
 ## Data dictionary (`real_vs_formula.csv`)
 
