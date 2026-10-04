@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heterogeneous Pipeline Makespan Calculator · heteropipe</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --ink: #1a2233;
+    --muted: #5b6472;
+    --line: #e3e7ee;
+    --accent: #2456c4;
+    --accent-soft: #eaf0fd;
+    --good: #0f7a4d;
+    --bad: #c0392b;
+    --mono: "SF Mono", "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+            "Microsoft YaHei", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.55; font-size: 15px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 64px; }
+  header h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: .2px; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  header .sub a { color: var(--accent); text-decoration: none; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px; margin-top: 18px;
+    box-shadow: 0 1px 2px rgba(16,24,40,.04);
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .field input {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line);
+    border-radius: 8px; font-family: var(--mono); font-size: 14px; color: var(--ink);
+    background: #fff;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .presets { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .presets button {
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    font-family: var(--sans);
+  }
+  .presets button:hover { border-color: var(--accent); color: var(--accent); }
+  .results { margin-top: 18px; }
+  .group-title {
+    font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .5px; margin: 20px 0 10px;
+  }
+  .group-title:first-child { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  td { font-size: 14px; }
+  td.val { font-family: var(--mono); text-align: right; font-weight: 600; white-space: nowrap; }
+  .mono { font-family: var(--mono); }
+  .tag {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+  }
+  .tag.yes { background: #e6f6ef; color: var(--good); }
+  .tag.no { background: #fdeeee; color: var(--bad); }
+  .footnote { color: var(--muted); font-size: 12px; margin-top: 20px; }
+  .formula { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Heterogeneous Pipeline Makespan Calculator</h1>
+    <div class="sub">
+      Closed-form makespan · GPipe homogeneity bias · phase transition · sandwich —
+      implements <a href="#">Exact Makespan Bounds and the GPipe Homogeneity Bias</a> (ZHU Wenbo, 2026)
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="grid">
+      <div class="field">
+        <label>Stage times τ (comma-separated, S values)</label>
+        <input id="tau" value="0.5, 1, 1, 5" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>Link latencies d (comma-separated, S−1 values, optional)</label>
+        <input id="d" value="" placeholder="e.g. 0.2, 0.1, 0.3" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>Micro-batches M</label>
+        <input id="M" type="number" min="1" step="1" value="8">
+      </div>
+      <div class="field">
+        <label>Overlap ratio ρ ∈ [0,1] (optional, default 1)</label>
+        <input id="rho" type="number" min="0" max="1" step="0.01" value="1">
+      </div>
+    </div>
+    <div class="presets">
+      <button data-tau="0.5,1,1,5" data-d="">Illustrative: 5090/3090/3090/1070 (§3.1)</button>
+      <button data-tau="1.13,2.90,2.62" data-d="">legalone:8b on 3 GPU generations (§7.2)</button>
+      <button data-tau="0.5,1,1,5" data-d="0.2,0.1,0.3">4 stages with communication</button>
+    </div>
+  </div>
+
+  <div class="card results" id="results"></div>
+
+  <div class="footnote">
+    Formulas match the paper exactly: T₁=(M−1)τ_max+Στⱼ; T₂=Στⱼ+Σdⱼ+(M−1)τ_max;
+    T₃=(M−1)σ_max+Σσ_s (σ_s=τ_s+d_s); T_c=(S+M−1)τ_max; homogeneity bias Σ(τ_max−τⱼ)
+    (independent of M); phase transition d_s&gt;τ_max−τ_s; sandwich T_async≤T_real≤T_block;
+    M*=1+(Στⱼ+Σdⱼ)/τ_max.
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const parse = (s) => s.split(",").map((x) => x.trim()).filter(Boolean).map(Number);
+  const fmt = (v) => {
+    if (!isFinite(v)) return "—";
+    if (Math.abs(v) >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 3 });
+    return (Math.round(v * 1000) / 1000).toString();
+  };
+
+  function compute() {
+    const tau = parse($("tau").value);
+    const dRaw = $("d").value;
+    const d = dRaw.trim() === "" ? [] : parse(dRaw);
+    const M = parseInt($("M").value, 10);
+    const rho = parseFloat($("rho").value);
+
+    let err = "";
+    if (tau.length === 0) err = "τ needs at least one stage.";
+    else if (tau.some((t) => isNaN(t) || t < 0)) err = "τ must be non-negative numbers.";
+    else if (d.length > 0 && d.length !== tau.length - 1)
+      err = "d must have S−1 = " + (tau.length - 1) + " values, got " + d.length + ".";
+    else if (d.some((x) => isNaN(x) || x < 0)) err = "d must be non-negative numbers.";
+    else if (!(M >= 1)) err = "M must be a positive integer.";
+    else if (!(rho >= 0 && rho <= 1)) err = "ρ must be in [0,1].";
+
+    const out = $("results");
+    if (err) {
+      out.innerHTML = '<div style="color:var(--bad);font-weight:600">⚠ ' + err + "</div>";
+      return;
+    }
+
+    const S = tau.length;
+    const tauMax = Math.max(...tau);
+    const sigma = tau.slice(0, -1).map((t, i) => t + (d[i] || 0)).concat(tau[tau.length - 1]);
+    const sigmaMax = Math.max(...sigma);
+    const dSum = sum(d);
+
+    const T_free = (M - 1) * tauMax + sum(tau);
+    const T_async = sum(tau) + dSum + (M - 1) * tauMax;
+    const T_block = (M - 1) * sigmaMax + sum(sigma);
+    const T_gpipe = (S + M - 1) * tauMax;
+
+    const bias = sum(tau.map((t) => tauMax - t));
+    const fullBias = bias - dSum;
+    const phase = d.some((ds, s) => ds > tauMax - tau[s]);
+    const overlapGap = (M - 1) * (sigmaMax - tauMax);
+    const slope = tauMax + (1 - rho) * (sigmaMax - tauMax);
+    const thrAsync = 1 / tauMax;
+    const thrBlock = 1 / sigmaMax;
+    const crossover = 1 + (sum(tau) + dSum) / tauMax;
+
+    const row = (k, v, extra) =>
+      "<tr><td>" + k + "</td><td class='val'>" + v +
+      (extra ? " <span class='mono' style='color:var(--muted);font-weight:400'>" + extra + "</span>" : "") +
+      "</td></tr>";
+
+    out.innerHTML =
+      '<div class="group-title">Makespan</div><table>' +
+      row("T₁ communication-free (Theorem 1)", fmt(T_free)) +
+      row("T₂ asynchronous (Theorem 2)", fmt(T_async)) +
+      row("T₃ blocking (Theorem 3)", fmt(T_block)) +
+      row("T_c classic homogeneous GPipe", fmt(T_gpipe)) +
+      "</table>" +
+
+      '<div class="group-title">Bias · Phase · Sandwich</div><table>' +
+      row("Homogeneity bias Σ(τ_max−τⱼ) (Cor 1)", fmt(bias), "independent of M") +
+      row("Full bias Σ(τ_max−τⱼ)−Σdⱼ (Cor 3)", fmt(fullBias)) +
+      row("Phase transition (Cor 4)", phase ? "triggered" : "not triggered",
+          phase ? "<span class='tag yes'>d_s &gt; slack</span>" : "<span class='tag no'>additive only</span>") +
+      row("Overlap-gain bound (M−1)(σ_max−τ_max) (Cor 5)", fmt(overlapGap)) +
+      row("Effective steady-state slope (ρ=" + rho + ")", fmt(slope)) +
+      "</table>" +
+
+      '<div class="group-title">Throughput · Crossover</div><table>' +
+      row("Asymptotic throughput (async) 1/τ_max", fmt(thrAsync)) +
+      row("Asymptotic throughput (blocking) 1/σ_max", fmt(thrBlock)) +
+      row("Fill→steady-state crossover M*", fmt(crossover)) +
+      "</table>" +
+
+      '<div class="footnote">σ_max = ' + fmt(sigmaMax) +
+      ", τ_max = " + fmt(tauMax) + ". Sandwich: T_async ≤ T_real ≤ T_block.</div>";
+  }
+
+  ["tau", "d", "M", "rho"].forEach((id) => $(id).addEventListener("input", compute));
+  document.querySelectorAll(".presets button").forEach((b) => {
+    b.addEventListener("click", () => {
+      $("tau").value = b.dataset.tau;
+      $("d").value = b.dataset.d || "";
+      compute();
+    });
+  });
+  compute();
+})();
+</script>
+</body>
+</html>

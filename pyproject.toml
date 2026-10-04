@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "heteropipe"
+version = "0.1.0"
+description = "Closed-form makespan, GPipe homogeneity bias, phase transition, and sandwich bounds for heterogeneous LLM micro-batch pipelines"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "ZHU Wenbo", email = "zhuwenbo@yvcct.edu.cn" },
+]
+keywords = [
+    "scheduling", "pipeline-parallelism", "LLM", "makespan", "GPU",
+    "heterogeneous", "GPipe", "closed-form", "flow-shop",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: System :: Distributed Computing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/ytidb6688/heteropipe"
+
+[project.scripts]
+heteropipe = "heteropipe.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
