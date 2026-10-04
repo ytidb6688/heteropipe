@@ -1,5 +1,5 @@
 # Copyright (c) 2026 ZHU Wenbo (Yantai Vocational College of Culture and Tourism).
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 """Tests for the closed-form formulas.
 

@@ -102,4 +102,4 @@ Open either directly in a browser, or serve with `python -m http.server`.
 
 ## License
 
-MIT — see `LICENSE`.
+Apache 2.0 — see `LICENSE`.
