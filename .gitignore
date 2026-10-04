@@ -20,3 +20,6 @@ Thumbs.db
 db_facts_real_vs_formula.json
 db_facts/
 paper/arxiv/
+
+# Chinese preprint is NOT published to GitHub (kept local + on 59 truth source)
+paper/预印本_异构流水线makespan闭式解_中文版.md
