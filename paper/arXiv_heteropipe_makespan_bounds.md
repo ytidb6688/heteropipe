@@ -418,7 +418,7 @@ The recurrences and closed forms are evaluated in IEEE double-precision floating
 
 ## Data and code availability
 
-The reference implementation (`heteropipe`), the dependency-free online calculators (`calculator.html`, `calculator_zh.html`), the de-identified production dataset backing §7.2 and Figure 5, and all reproducibility scripts are released at https://github.com/ytidb6688/heteropipe. The dataset (`data/real_vs_formula.csv`; 8,571 completed requests, 2026-09-03 → 2026-10-04) is de-identified: host identifiers are mapped to anonymized `node-N` labels, and no IP addresses, timestamps, request identifiers, or payloads are released. The dataset is licensed CC-BY-4.0; the code and documentation are licensed Apache-2.0. A long-term archival DOI (Zenodo) will be issued upon acceptance.
+The reference implementation (`heteropipe`), the dependency-free online calculators (`calculator.html`, `calculator_zh.html`), the de-identified production dataset backing §7.2 and Figure 5, and all reproducibility scripts are released at https://github.com/ytidb6688/heteropipe. The dataset (`data/real_vs_formula.csv`; 8,571 completed requests, 2026-09-03 → 2026-10-04) is de-identified: host identifiers are mapped to anonymized `node-N` labels, and no IP addresses, timestamps, request identifiers, or payloads are released. The dataset is licensed CC-BY-4.0; the code and documentation are licensed Apache-2.0.
 
 ---
 
