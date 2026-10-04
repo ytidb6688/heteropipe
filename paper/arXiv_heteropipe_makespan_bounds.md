@@ -422,6 +422,29 @@ The reference implementation (`heteropipe`), the dependency-free online calculat
 
 ---
 
+## Using `heteropipe`
+
+The reference implementation is installable from PyPI and has no runtime
+dependencies:
+
+```bash
+pip install heteropipe
+```
+
+A representative call reproduces the §3.1 four-stage example:
+
+```python
+from heteropipe import Pipeline
+p = Pipeline(tau=[0.5, 1.0, 1.0, 5.0])   # §3.1 four-stage example
+p.bias()       # 12.5  — Corollary 1, the constant GPipe homogeneity bias
+p.async_(M=1)  # 7.5    — Theorem 2 makespan (matches §3.1)
+```
+
+The same formulas, the de-identified §7.2 dataset, and all reproducibility
+scripts are available at https://github.com/ytidb6688/heteropipe.
+
+---
+
 ## References
 1. Huang Y, Cheng H, Bapna A, et al. GPipe: Efficient training of giant neural networks using pipeline parallelism. *Advances in Neural Information Processing Systems (NeurIPS)*, 2019.
 2. Graham R L. Bounds on multiprocessing timing anomalies. *SIAM Journal on Applied Mathematics*, 17(2):416–429, 1969.
