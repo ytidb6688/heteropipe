@@ -11,21 +11,21 @@ This is the reference implementation of the preprint
 
 ## What it computes
 
-For a chain of `S` pipeline stages with per-micro-batch service times
-`tau = [τ₀, …, τ_{S-1}]` and per-link latencies `d = [d₀, …, d_{S-2}]`:
+For a chain of $S$ pipeline stages with per-micro-batch service times $\tau=[\tau_0,\dots,\tau_{S-1}]$
+and per-link latencies $d=[d_0,\dots,d_{S-2}]$:
 
 | Result | Formula |
 |---|---|
-| Theorem 1 — communication-free | `T = (M-1)·τ_max + Σ τⱼ` |
-| Theorem 2 — asynchronous | `T = Σ τⱼ + Σ dⱼ + (M-1)·τ_max` |
-| Theorem 3 — blocking (`σ_s = τ_s + d_s`) | `T = (M-1)·σ_max + Σ σ_s` |
-| classic GPipe (homogeneous) | `T_c = (S + M - 1)·τ_max` |
-| Corollary 1 — homogeneity bias | `T_c − T_free = Σ (τ_max − τⱼ)` (constant in `M`) |
-| Corollary 3 — full bias | `T_c − T_async = Σ (τ_max − τⱼ) − Σ dⱼ` |
-| Corollary 4 — phase transition | `∃ s : d_s > τ_max − τ_s` |
-| Corollary 5 — overlap gain | `T_block − T_async = (M-1)·(σ_max − τ_max)` |
-| Proposition 1 — throughput | async `1/τ_max`; blocking `1/σ_max` |
-| Crossover batch count | `M* = 1 + (Σ τⱼ + Σ dⱼ) / τ_max` |
+| Theorem 1 — communication-free | $T=(M-1)\tau_{\max}+\sum_j\tau_j$ |
+| Theorem 2 — asynchronous | $T=\sum_j\tau_j+\sum_j d_j+(M-1)\tau_{\max}$ |
+| Theorem 3 — blocking | $T=(M-1)\sigma_{\max}+\sum_s\sigma_s$, where $\sigma_s=\tau_s+d_s$ |
+| classic GPipe (homogeneous) | $T_c=(S+M-1)\tau_{\max}$ |
+| Corollary 1 — homogeneity bias | $T_c-T_{\text{free}}=\sum_j(\tau_{\max}-\tau_j)$, constant in $M$ |
+| Corollary 3 — full bias | $T_c-T_{\text{async}}=\sum_j(\tau_{\max}-\tau_j)-\sum_j d_j$ |
+| Corollary 4 — phase transition | $\exists s: d_s \gt \tau_{\max}-\tau_s$ |
+| Corollary 5 — overlap gain | $T_{\text{block}}-T_{\text{async}}=(M-1)(\sigma_{\max}-\tau_{\max})$ |
+| Proposition 1 — throughput | async $1/\tau_{\max}$; blocking $1/\sigma_{\max}$ |
+| Crossover batch count | $M^{\ast}=1+(\sum_j\tau_j+\sum_j d_j)/\tau_{\max}$ |
 
 ## Install
 
@@ -64,7 +64,7 @@ p.slope(rho=0.8)        # effective steady-state slope under 80% overlap
 p.throughput(blocking=True)
 ```
 
-Measure the overlap ratio `ρ` from an observed makespan `T_real`:
+Measure the overlap ratio $\rho$ from an observed makespan $T_{\text{real}}$:
 
 ```python
 rho = p.overlap_ratio(T_real=42.0, M=16)   # ρ = (T_block − T_real)/(T_block − T_async)
