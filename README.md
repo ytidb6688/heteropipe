@@ -24,7 +24,7 @@ and per-link latencies $d=[d_0,\dots,d_{S-2}]$:
 | Corollary 3 — full bias | $T_c-T_{\text{async}}=\sum_j(\tau_{\max}-\tau_j)-\sum_j d_j$ |
 | Corollary 4 — phase transition | $\exists s: d_s \gt \tau_{\max}-\tau_s$ |
 | Corollary 5 — overlap gain | $T_{\text{block}}-T_{\text{async}}=(M-1)(\sigma_{\max}-\tau_{\max})$ |
-| Proposition 1 — throughput | async $1/\tau_{\max}$; blocking $1/\sigma_{\max}$ |
+| Proposition 1 — asymptotic throughput | async $\lim_{M\to\infty}M/T(M)=1/\tau_{\max}$ — set by the bottleneck stage alone, independent of every $d_j$;<br>blocking $\lim_{M\to\infty}M/T(M)=1/\sigma_{\max}$; the two coincide iff $d_s\le\tau_{\max}-\tau_s$ for all $s$ |
 | Crossover batch count | $M^{\ast}=1+(\sum_j\tau_j+\sum_j d_j)/\tau_{\max}$ |
 
 ## Install
