@@ -21,8 +21,9 @@ and per-link latencies $d=[d_0,\dots,d_{S-2}]$:
 | Theorem 3 — blocking | $T=(M-1)\sigma_{\max}+\sum_s\sigma_s$, where $\sigma_s=\tau_s+d_s$ |
 | classic GPipe (homogeneous) | $T_c=(S+M-1)\tau_{\max}$ |
 | Corollary 1 — homogeneity bias | $T_c-T_{\text{free}}=\sum_j(\tau_{\max}-\tau_j)$, constant in $M$ |
+| Corollary 2 — communication is additive | $\sum_j d_j$ enters only as an additive constant; the steady-state slope stays $\tau_{\max}$ regardless of every $d_j$ |
 | Corollary 3 — full bias | $T_c-T_{\text{async}}=\sum_j(\tau_{\max}-\tau_j)-\sum_j d_j$ |
-| Corollary 4 — phase transition | $\exists s: d_s \gt \tau_{\max}-\tau_s$ |
+| Corollary 4 — communication phase transition | the steady-state slope becomes $\sigma_{\max}$ rather than $\tau_{\max}$ iff $\exists s: d_s \gt \tau_{\max}-\tau_s$ — some link outruns its stage's compute slack |
 | Corollary 5 — overlap gain | $T_{\text{block}}-T_{\text{async}}=(M-1)(\sigma_{\max}-\tau_{\max})$ |
 | Proposition 1 — asymptotic throughput | async $\lim_{M\to\infty}M/T(M)=1/\tau_{\max}$ — set by the bottleneck stage alone, independent of every $d_j$;<br>blocking $\lim_{M\to\infty}M/T(M)=1/\sigma_{\max}$; the two coincide iff $d_s\le\tau_{\max}-\tau_s$ for all $s$ |
 | Crossover batch count | $M^{\ast}=1+(\sum_j\tau_j+\sum_j d_j)/\tau_{\max}$ |
@@ -41,7 +42,7 @@ No runtime dependencies — pure standard library, Python ≥ 3.8.
 ```python
 from heteropipe import Pipeline
 
-# legalone:8b on RTX 5090 / 3090-97 / 3090-98 (Sec. 7.2 of the paper)
+# legalone:8b on RTX 5090 / dual RTX 3090 (Sec. 7.2 of the paper)
 p = Pipeline(tau=[1.13, 2.90, 2.62])
 
 p.bias()                # 2.05   — Corollary 1, the constant GPipe bias
